@@ -1,0 +1,1199 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Sistema Profissional de Transporte da Saúde</title>
+  <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+  <style>
+    :root {
+      --bg: #f3f6fb;
+      --surface: #ffffff;
+      --surface-2: #f8fbff;
+      --primary: #0f4c81;
+      --primary-2: #1769aa;
+      --accent: #1f8b4c;
+      --warning: #d9822b;
+      --danger: #c0392b;
+      --text: #1d2a3a;
+      --muted: #6b7a8c;
+      --border: #dde6f0;
+      --shadow: 0 14px 34px rgba(17, 40, 72, 0.08);
+      --radius: 18px;
+      --radius-sm: 12px;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      font-family: "Segoe UI", Arial, sans-serif;
+      color: var(--text);
+      background: linear-gradient(180deg, #eef4fb 0%, #f7f9fc 100%);
+    }
+
+    .app-shell {
+      display: grid;
+      grid-template-columns: 300px 1fr;
+      min-height: 100vh;
+    }
+
+    .sidebar {
+      background: linear-gradient(180deg, #0d3d68 0%, #0f4c81 100%);
+      color: #fff;
+      padding: 26px 18px;
+      position: sticky;
+      top: 0;
+      height: 100vh;
+      box-shadow: var(--shadow);
+    }
+
+    .brand {
+      padding: 12px;
+      border: 1px solid rgba(255,255,255,.15);
+      border-radius: 20px;
+      background: rgba(255,255,255,.06);
+      margin-bottom: 18px;
+    }
+
+    .brand h1 {
+      margin: 0;
+      font-size: 24px;
+      line-height: 1.15;
+    }
+
+    .brand p {
+      margin: 8px 0 0;
+      font-size: 13px;
+      opacity: .88;
+    }
+
+    .role-box {
+      background: rgba(255,255,255,.08);
+      border: 1px solid rgba(255,255,255,.15);
+      padding: 14px;
+      border-radius: 16px;
+      margin-bottom: 18px;
+    }
+
+    .role-box span {
+      display: block;
+      font-size: 12px;
+      opacity: .8;
+      margin-bottom: 6px;
+    }
+
+    .role-box strong {
+      font-size: 16px;
+    }
+
+    .menu {
+      display: grid;
+      gap: 10px;
+    }
+
+    .menu button {
+      border: none;
+      border-radius: 14px;
+      padding: 14px 16px;
+      text-align: left;
+      background: rgba(255,255,255,.08);
+      color: #fff;
+      font-weight: 700;
+      cursor: pointer;
+      transition: .2s ease;
+    }
+
+    .menu button:hover,
+    .menu button.active {
+      background: #fff;
+      color: var(--primary);
+    }
+
+    .sidebar-footer {
+      margin-top: 18px;
+      padding: 14px;
+      border-radius: 14px;
+      font-size: 13px;
+      background: rgba(255,255,255,.08);
+      line-height: 1.5;
+    }
+
+    .content {
+      padding: 24px;
+    }
+
+    .topbar {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 22px;
+      box-shadow: var(--shadow);
+      padding: 18px 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      margin-bottom: 20px;
+      flex-wrap: wrap;
+    }
+
+    .topbar h2 {
+      margin: 0;
+      font-size: 28px;
+      color: var(--primary);
+    }
+
+    .topbar p {
+      margin: 6px 0 0;
+      color: var(--muted);
+    }
+
+    .top-actions {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .page { display: none; }
+    .page.active { display: block; }
+
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 16px;
+      margin-bottom: 20px;
+    }
+
+    .stat-card,
+    .panel {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+    }
+
+    .stat-card {
+      padding: 20px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .stat-card::after {
+      content: "";
+      position: absolute;
+      width: 80px;
+      height: 80px;
+      border-radius: 50%;
+      background: rgba(15, 76, 129, .08);
+      right: -18px;
+      top: -18px;
+    }
+
+    .stat-card .label {
+      color: var(--muted);
+      font-size: 13px;
+      font-weight: 700;
+      margin-bottom: 8px;
+      text-transform: uppercase;
+      letter-spacing: .4px;
+    }
+
+    .stat-card .value {
+      font-size: 32px;
+      font-weight: 800;
+      color: var(--primary);
+      margin-bottom: 8px;
+    }
+
+    .grid { display: grid; gap: 18px; }
+    .grid-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .grid-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+
+    .panel {
+      padding: 22px;
+    }
+
+    .panel-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+      margin-bottom: 16px;
+    }
+
+    .panel-header h3 {
+      margin: 0;
+      color: var(--primary);
+      font-size: 21px;
+    }
+
+    .panel-header p {
+      margin: 6px 0 0;
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    .field {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      margin-bottom: 14px;
+    }
+
+    .field.inline { margin-bottom: 0; }
+
+    label {
+      font-size: 14px;
+      font-weight: 700;
+      color: #364659;
+    }
+
+    input, select, textarea {
+      width: 100%;
+      border: 1px solid #cfdae8;
+      border-radius: 13px;
+      background: #fff;
+      padding: 12px 14px;
+      font-size: 15px;
+      color: var(--text);
+      outline: none;
+      transition: .2s ease;
+    }
+
+    textarea { min-height: 104px; resize: vertical; }
+
+    input:focus, select:focus, textarea:focus {
+      border-color: var(--primary-2);
+      box-shadow: 0 0 0 3px rgba(23, 105, 170, .12);
+    }
+
+    .actions {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+
+    .btn {
+      border: none;
+      border-radius: 13px;
+      padding: 12px 16px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: .2s ease;
+    }
+
+    .btn-primary { background: var(--primary); color: #fff; }
+    .btn-primary:hover { background: #0b395f; }
+    .btn-success { background: var(--accent); color: #fff; }
+    .btn-warning { background: var(--warning); color: #fff; }
+    .btn-light { background: #edf3fa; color: #223449; }
+    .btn-danger { background: var(--danger); color: #fff; }
+
+    .subcard {
+      background: var(--surface-2);
+      border: 1px solid #e2eaf3;
+      border-radius: 16px;
+      padding: 18px;
+    }
+
+    .subcard h4 {
+      margin: 0 0 14px;
+      color: var(--primary);
+      font-size: 17px;
+    }
+
+    .toolbar {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+      align-items: end;
+      margin-bottom: 18px;
+    }
+
+    .toolbar .field {
+      min-width: 180px;
+      flex: 1;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      background: #fff;
+      overflow: hidden;
+      border-radius: 16px;
+    }
+
+    th, td {
+      padding: 12px 10px;
+      border-bottom: 1px solid #e7edf5;
+      text-align: left;
+      vertical-align: top;
+      font-size: 14px;
+    }
+
+    th {
+      background: #f0f6fc;
+      color: var(--primary);
+      text-transform: uppercase;
+      font-size: 12px;
+      letter-spacing: .4px;
+    }
+
+    .tag {
+      display: inline-flex;
+      align-items: center;
+      padding: 6px 10px;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 700;
+      background: #e8f1fb;
+      color: var(--primary);
+    }
+
+    .muted {
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .empty {
+      border: 2px dashed #d8e4f0;
+      background: #fbfdff;
+      border-radius: 16px;
+      padding: 28px;
+      text-align: center;
+      color: var(--muted);
+      font-weight: 600;
+    }
+
+    .week-grid {
+      display: grid;
+      grid-template-columns: repeat(7, minmax(0, 1fr));
+      gap: 14px;
+    }
+
+    .day-column {
+      background: #fff;
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      box-shadow: var(--shadow);
+      padding: 14px;
+      min-height: 220px;
+    }
+
+    .day-column h4 {
+      margin: 0 0 10px;
+      color: var(--primary);
+      font-size: 15px;
+    }
+
+    .trip-item {
+      background: #f9fbfe;
+      border: 1px solid #e2ebf5;
+      border-radius: 14px;
+      padding: 12px;
+      margin-bottom: 10px;
+    }
+
+    .trip-item strong {
+      display: block;
+      margin-bottom: 4px;
+    }
+
+    .login-screen {
+      min-height: 100vh;
+      display: grid;
+      place-items: center;
+      padding: 20px;
+    }
+
+    .login-card {
+      width: 100%;
+      max-width: 420px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 24px;
+      box-shadow: var(--shadow);
+      padding: 28px;
+    }
+
+    .login-card h2 {
+      margin: 0 0 10px;
+      color: var(--primary);
+      font-size: 28px;
+    }
+
+    .hidden { display: none !important; }
+
+    @media (max-width: 1200px) {
+      .stats, .grid-2, .grid-3, .week-grid { grid-template-columns: 1fr; }
+      .app-shell { grid-template-columns: 1fr; }
+      .sidebar { position: static; height: auto; }
+    }
+  </style>
+</head>
+<body>
+
+<div id="loginSistema" style="position:fixed;top:0;left:0;width:100%;height:100%;background:#f3f6fb;
+display:flex;align-items:center;justify-content:center;z-index:9999;">
+  <div style="background:white;padding:40px;border-radius:14px;box-shadow:0 10px 30px rgba(0,0,0,.1);text-align:center;width:320px">
+    <h2>Acesso ao Sistema</h2>
+    <input id="senhaSistema" type="password" placeholder="Digite a senha"
+      style="width:100%;padding:10px;margin-top:10px;border:1px solid #ccc;border-radius:8px">
+    <button onclick="entrarSistema()" style="margin-top:10px;width:100%">Entrar</button>
+  </div>
+</div>
+
+  <div id="loginScreen" class="login-screen">
+    <div class="login-card">
+      <h2>Sistema de Transporte</h2>
+      <p class="muted">Escolha a área de acesso. A área do Secretário exige senha.</p>
+      <div class="field">
+        <label>Entrar como</label>
+        <select id="loginRole">
+          <option value="marcacao">Marcação</option>
+          <option value="transporte">Transporte</option>
+          <option value="secretario">Secretário de Saúde</option>
+        </select>
+      </div>
+      <div class="field" id="passwordField" style="display:none;">
+        <label>Senha do Secretário</label>
+        <input type="password" id="loginPassword" placeholder="Digite a senha">
+      </div>
+      <div class="actions">
+        <button class="btn btn-primary" id="enterAppBtn">Entrar no sistema</button>
+      </div>
+      <p class="muted" style="margin-top:16px;">Senha inicial do exemplo: <strong>2026</strong></p>
+    </div>
+  </div>
+
+  <div id="appShell" class="app-shell hidden">
+    <aside class="sidebar">
+      <div class="brand">
+        <h1>Transporte da Saúde</h1>
+        <p>Controle profissional de marcações, viagens e relatórios.</p>
+      </div>
+      <div class="role-box">
+        <span>Perfil atual</span>
+        <strong id="currentRoleLabel">Marcação</strong>
+      </div>
+      <div class="menu">
+        <button class="nav-btn active" data-page="marcacaoPage">Página de Marcação</button>
+        <button class="nav-btn" data-page="transportePage">Página do Transporte</button>
+        <button class="nav-btn" data-page="secretarioPage">Página do Secretário</button>
+      </div>
+      <div class="sidebar-footer">
+        <strong>Organização automática</strong><br>
+        Registros por data, geração de PDF individual, PDF diário e visual semanal do transporte.
+      </div>
+      <div class="actions" style="margin-top:16px;">
+        <button class="btn btn-light" id="logoutBtn">Sair</button>
+      </div>
+    </aside>
+
+    <section class="content">
+      <div class="topbar">
+        <div>
+          <h2 id="pageTitle">Página de Marcação</h2>
+          <p id="pageSubtitle">Cadastre pacientes e gere o termo de responsabilidade em PDF.</p>
+        </div>
+        <div class="top-actions">
+          <button class="btn btn-light" id="backupBtn">Exportar backup</button>
+          <label class="btn btn-light" for="restoreInput" style="display:inline-flex;align-items:center;cursor:pointer;">Importar backup</label>
+          <input type="file" id="restoreInput" accept="application/json" class="hidden">
+        </div>
+      </div>
+
+      <section id="marcacaoPage" class="page active">
+        <div class="stats">
+          <div class="stat-card"><div class="label">Marcações hoje</div><div class="value" id="markToday">0</div><div class="muted">Agendamentos da data atual</div></div>
+          <div class="stat-card"><div class="label">Viagens na semana</div><div class="value" id="markWeek">0</div><div class="muted">Controle semanal</div></div>
+          <div class="stat-card"><div class="label">Sem veículo</div><div class="value" id="markNoVehicle">0</div><div class="muted">Pendências do transporte</div></div>
+          <div class="stat-card"><div class="label">Sem motorista</div><div class="value" id="markNoDriver">0</div><div class="muted">Pendências do transporte</div></div>
+        </div>
+
+        <div class="panel">
+          <div class="panel-header">
+            <div>
+              <h3>Nova Marcação</h3>
+              <p>Preencha os dados do paciente, acompanhante, atendimento e viagem.</p>
+            </div>
+          </div>
+
+          <form id="bookingForm">
+            <div class="grid grid-2">
+              <div class="subcard">
+                <h4>Dados do Paciente</h4>
+                <div class="field"><label>Nome completo</label><input id="pacienteNome" required></div>
+                <div class="field"><label>RG ou CPF</label><input id="pacienteDoc"></div>
+                <div class="field"><label>Endereço</label><input id="pacienteEndereco"></div>
+                <div class="field"><label>Contato telefone</label><input id="pacienteTelefone"></div>
+                <div class="field"><label>Necessidades especiais</label><textarea id="pacienteNecessidades"></textarea></div>
+              </div>
+
+              <div class="subcard">
+                <h4>Dados do Acompanhante</h4>
+                <div class="field"><label>Nome completo</label><input id="acompNome"></div>
+                <div class="field"><label>RG ou CPF</label><input id="acompDoc"></div>
+                <div class="field"><label>Contato telefone</label><input id="acompTelefone"></div>
+              </div>
+            </div>
+
+            <div class="grid grid-2" style="margin-top:18px;">
+              <div class="subcard">
+                <h4>Dados do Atendimento</h4>
+                <div class="field"><label>Local do atendimento</label><input id="atendimentoLocal"></div>
+                <div class="field"><label>Tipo de atendimento</label><input id="atendimentoTipo"></div>
+                <div class="field"><label>Horário do atendimento</label><input id="atendimentoHorario" type="time"></div>
+              </div>
+
+              <div class="subcard">
+                <h4>Dados da Viagem</h4>
+                <div class="field"><label>Tipo de transporte</label>
+                  <select id="viagemTipo">
+                    <option value="">Selecione</option>
+                    <option>Ambulância</option>
+                    <option>Van</option>
+                    <option>Carro comum</option>
+                  </select>
+                </div>
+                <div class="field"><label>Data</label><input id="viagemData" type="date" required></div>
+                <div class="field"><label>Local de embarque</label><input id="viagemEmbarque"></div>
+                <div class="field"><label>Veículo / Placa</label><input id="viagemVeiculo"></div>
+                <div class="field"><label>Motorista</label><input id="viagemMotorista"></div>
+                <div class="field"><label>Observação</label><textarea id="observacao"></textarea></div>
+              </div>
+            </div>
+
+            <div class="actions" style="margin-top:18px;">
+              <button class="btn btn-primary" type="submit">Salvar marcação</button>
+              <button class="btn btn-success" type="button" id="saveAndPdfBtn">Salvar e gerar PDF</button>
+              <button class="btn btn-light" type="reset">Limpar formulário</button>
+            </div>
+          </form>
+        </div>
+      </section>
+
+      <section id="transportePage" class="page">
+        <div class="stats">
+          <div class="stat-card"><div class="label">Viagens da semana</div><div class="value" id="weekTripsCount">0</div><div class="muted">Total planejado</div></div>
+          <div class="stat-card"><div class="label">Sem veículo</div><div class="value" id="pendingVehicleCount">0</div><div class="muted">Aguardando definição</div></div>
+          <div class="stat-card"><div class="label">Sem motorista</div><div class="value" id="pendingDriverCount">0</div><div class="muted">Aguardando definição</div></div>
+          <div class="stat-card"><div class="label">Viagens hoje</div><div class="value" id="todayTripsCount">0</div><div class="muted">Controle diário</div></div>
+        </div>
+
+        <div class="panel">
+          <div class="panel-header">
+            <div>
+              <h3>Agenda semanal do transporte</h3>
+              <p>Atualize veículo, placa, motorista e dados do condutor diretamente nesta tela.</p>
+            </div>
+          </div>
+          <div id="weekView" class="week-grid"></div>
+        </div>
+      </section>
+
+      <section id="secretarioPage" class="page">
+        <div class="stats">
+          <div class="stat-card"><div class="label">Total de registros</div><div class="value" id="totalRegistros">0</div><div class="muted">Base geral</div></div>
+          <div class="stat-card"><div class="label">Registros hoje</div><div class="value" id="registrosHoje">0</div><div class="muted">Movimento do dia</div></div>
+          <div class="stat-card"><div class="label">Dias com viagem</div><div class="value" id="diasComViagem">0</div><div class="muted">Datas cadastradas</div></div>
+          <div class="stat-card"><div class="label">Sem motorista</div><div class="value" id="semMotorista">0</div><div class="muted">Pendências operacionais</div></div>
+        </div>
+
+        <div class="panel">
+          <div class="panel-header">
+            <div>
+              <h3>Central do Secretário</h3>
+              <p>Filtre, visualize, gere PDF individual, PDF por data e exclua registros quando necessário.</p>
+            </div>
+          </div>
+
+          <div class="toolbar">
+            <div class="field inline"><label>Filtrar por data</label><input type="date" id="filtroData"></div>
+            <div class="field inline"><label>Buscar por paciente</label><input type="text" id="buscaPaciente" placeholder="Digite o nome do paciente"></div>
+            <button class="btn btn-light" id="limparFiltrosBtn">Limpar filtros</button>
+            <button class="btn btn-success" id="pdfDiaBtn">Gerar PDF do dia filtrado</button>
+            <button class="btn btn-primary" id="pdfHojeBtn">Gerar PDF do dia atual</button>
+          </div>
+
+          <div id="secretarioList"></div>
+        </div>
+      </section>
+    </section>
+  </div>
+
+  <script>
+    const SECRETARIO_PASSWORD = '2026';
+    const STORAGE_KEY = 'sistema_transporte_saude_profissional';
+
+    const pageMeta = {
+      marcacaoPage: { title: 'Página de Marcação', subtitle: 'Cadastre pacientes e gere o termo de responsabilidade em PDF.' },
+      transportePage: { title: 'Página do Transporte', subtitle: 'Organize a semana, informe veículo, placa e motorista.' },
+      secretarioPage: { title: 'Página do Secretário', subtitle: 'Tenha controle geral dos registros, relatórios e documentos.' }
+    };
+
+    const roleMap = {
+      marcacao: { label: 'Marcação', page: 'marcacaoPage' },
+      transporte: { label: 'Transporte', page: 'transportePage' },
+      secretario: { label: 'Secretário de Saúde', page: 'secretarioPage' }
+    };
+
+    const navButtons = () => document.querySelectorAll('.nav-btn');
+    const pages = () => document.querySelectorAll('.page');
+
+    function getRecords() {
+      return JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
+    }
+
+    function saveRecords(records) {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(records));
+    }
+
+    function generateId() {
+      return 'ID-' + Date.now() + '-' + Math.floor(Math.random() * 9999);
+    }
+
+    function formatDate(dateStr) {
+      if (!dateStr) return '-';
+      const [y, m, d] = dateStr.split('-');
+      return `${d}/${m}/${y}`;
+    }
+
+    function todayStr() {
+      const d = new Date();
+      const year = d.getFullYear();
+      const month = String(d.getMonth() + 1).padStart(2, '0');
+      const day = String(d.getDate()).padStart(2, '0');
+      return `${year}-${month}-${day}`;
+    }
+
+    function getWeekDates() {
+      const now = new Date();
+      const day = now.getDay();
+      const diff = day === 0 ? -6 : 1 - day;
+      const monday = new Date(now);
+      monday.setDate(now.getDate() + diff);
+      const dates = [];
+      for (let i = 0; i < 7; i++) {
+        const dt = new Date(monday);
+        dt.setDate(monday.getDate() + i);
+        dates.push(dt);
+      }
+      return dates;
+    }
+
+    function isDateInCurrentWeek(dateStr) {
+      if (!dateStr) return false;
+      const target = new Date(dateStr + 'T00:00:00');
+      const week = getWeekDates();
+      const start = new Date(week[0]);
+      start.setHours(0,0,0,0);
+      const end = new Date(week[6]);
+      end.setHours(23,59,59,999);
+      return target >= start && target <= end;
+    }
+
+    function collectFormData() {
+      return {
+        id: generateId(),
+        createdAt: new Date().toISOString(),
+        pacienteNome: document.getElementById('pacienteNome').value.trim(),
+        pacienteDoc: document.getElementById('pacienteDoc').value.trim(),
+        pacienteEndereco: document.getElementById('pacienteEndereco').value.trim(),
+        pacienteTelefone: document.getElementById('pacienteTelefone').value.trim(),
+        pacienteNecessidades: document.getElementById('pacienteNecessidades').value.trim(),
+        acompNome: document.getElementById('acompNome').value.trim(),
+        acompDoc: document.getElementById('acompDoc').value.trim(),
+        acompTelefone: document.getElementById('acompTelefone').value.trim(),
+        atendimentoLocal: document.getElementById('atendimentoLocal').value.trim(),
+        atendimentoTipo: document.getElementById('atendimentoTipo').value.trim(),
+        atendimentoHorario: document.getElementById('atendimentoHorario').value.trim(),
+        viagemTipo: document.getElementById('viagemTipo').value.trim(),
+        viagemData: document.getElementById('viagemData').value,
+        viagemEmbarque: document.getElementById('viagemEmbarque').value.trim(),
+        viagemVeiculo: document.getElementById('viagemVeiculo').value.trim(),
+        viagemMotorista: document.getElementById('viagemMotorista').value.trim(),
+        observacao: document.getElementById('observacao').value.trim(),
+        motoristaCpf: '',
+        motoristaTelefone: '',
+        motoristaCategoria: ''
+      };
+    }
+
+    function saveRecord(record) {
+      const records = getRecords();
+      records.push(record);
+      saveRecords(records);
+      refreshAll();
+    }
+
+    function generatePatientPdf(record) {
+      const { jsPDF } = window.jspdf;
+      const doc = new jsPDF();
+      const left = 14;
+      let y = 18;
+
+      doc.setFillColor(15, 76, 129);
+      doc.rect(0, 0, 210, 28, 'F');
+      doc.setTextColor(255, 255, 255);
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(16);
+      doc.text('TERMO DE RESPONSABILIDADE PARA VIAGEM', left, 18);
+      doc.setTextColor(40, 40, 40);
+
+      y = 38;
+      const sections = [
+        ['DADOS DO PACIENTE', [
+          `Nome completo: ${record.pacienteNome || '-'}`,
+          `RG ou CPF: ${record.pacienteDoc || '-'}`,
+          `Endereco: ${record.pacienteEndereco || '-'}`,
+          `Contato telefone: ${record.pacienteTelefone || '-'}`,
+          `Necessidades especiais: ${record.pacienteNecessidades || '-'}`
+        ]],
+        ['DADOS DO ACOMPANHANTE', [
+          `Nome completo: ${record.acompNome || '-'}`,
+          `RG ou CPF: ${record.acompDoc || '-'}`,
+          `Contato telefone: ${record.acompTelefone || '-'}`
+        ]],
+        ['DADOS DO ATENDIMENTO', [
+          `Local do atendimento: ${record.atendimentoLocal || '-'}`,
+          `Tipo de atendimento: ${record.atendimentoTipo || '-'}`,
+          `Horario do atendimento: ${record.atendimentoHorario || '-'}`
+        ]],
+        ['DADOS DA VIAGEM', [
+          `Tipo de transporte: ${record.viagemTipo || '-'}`,
+          `Data da viagem: ${formatDate(record.viagemData)}`,
+          `Local de embarque: ${record.viagemEmbarque || '-'}`,
+          `Veiculo / Placa: ${record.viagemVeiculo || '-'}`,
+          `Motorista: ${record.viagemMotorista || '-'}`,
+          `Observacao: ${record.observacao || '-'}`
+        ]]
+      ];
+
+      sections.forEach(([title, lines]) => {
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(12);
+        doc.text(title, left, y);
+        y += 6;
+        doc.setDrawColor(220, 228, 237);
+        doc.line(left, y, 196, y);
+        y += 6;
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(11);
+        lines.forEach(line => {
+          const split = doc.splitTextToSize(line, 180);
+          doc.text(split, left, y);
+          y += split.length * 6;
+        });
+        y += 3;
+      });
+
+      const decl = 'Declaro estar ciente das condicoes da viagem e confirmo a veracidade das informacoes prestadas neste documento.';
+      const declSplit = doc.splitTextToSize(decl, 180);
+      doc.text(declSplit, left, y);
+      y += declSplit.length * 6 + 10;
+
+      doc.text('Data: ____/____/________', left, y);
+      y += 16;
+      doc.text('Assinatura do paciente ou responsavel: ______________________________________', left, y);
+      y += 16;
+      doc.text('Assinatura do acompanhante: _______________________________________________', left, y);
+
+      doc.save(`termo-${(record.pacienteNome || 'paciente').replace(/\s+/g, '-').toLowerCase()}.pdf`);
+    }
+
+    function generateDailyPdf(records, chosenDate, filename = 'relatorio-dia.pdf') {
+      const { jsPDF } = window.jspdf;
+      const doc = new jsPDF();
+      let y = 18;
+      const left = 12;
+
+      doc.setFillColor(15, 76, 129);
+      doc.rect(0, 0, 210, 24, 'F');
+      doc.setTextColor(255, 255, 255);
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(15);
+      doc.text(`RELATORIO DE VIAGENS - ${formatDate(chosenDate)}`, left, 16);
+      doc.setTextColor(30, 30, 30);
+      y = 34;
+
+      if (!records.length) {
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(11);
+        doc.text('Nenhum registro encontrado para esta data.', left, y);
+        doc.save(filename);
+        return;
+      }
+
+      records.forEach((r, i) => {
+        if (y > 245) {
+          doc.addPage();
+          y = 16;
+        }
+
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(12);
+        doc.text(`${i + 1}. ${r.pacienteNome || '-'}`, left, y);
+        y += 6;
+
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(10);
+        [
+          `Documento: ${r.pacienteDoc || '-'} | Telefone: ${r.pacienteTelefone || '-'}`,
+          `Atendimento: ${r.atendimentoLocal || '-'} | Tipo: ${r.atendimentoTipo || '-'} | Horario: ${r.atendimentoHorario || '-'}`,
+          `Transporte: ${r.viagemTipo || '-'} | Embarque: ${r.viagemEmbarque || '-'} | Veiculo: ${r.viagemVeiculo || '-'} | Motorista: ${r.viagemMotorista || '-'}`,
+          `Acompanhante: ${r.acompNome || '-'} | Contato: ${r.acompTelefone || '-'}`,
+          `Observacao: ${r.observacao || '-'}`
+        ].forEach(line => {
+          const split = doc.splitTextToSize(line, 184);
+          doc.text(split, left, y);
+          y += split.length * 5;
+        });
+
+        y += 3;
+        doc.setDrawColor(223, 230, 239);
+        doc.line(left, y, 198, y);
+        y += 8;
+      });
+
+      doc.save(filename);
+    }
+
+    
+function openPage(pageId){
+
+if(pageId==="secretarioPage"){
+const senha=prompt("Senha da Secretaria")
+if(senha!=="fran2026"){
+alert("Senha incorreta")
+return
+}
+}
+
+      pages().forEach(p => p.classList.remove('active'));
+      navButtons().forEach(b => b.classList.remove('active'));
+      document.getElementById(pageId).classList.add('active');
+      document.querySelector(`.nav-btn[data-page="${pageId}"]`).classList.add('active');
+      document.getElementById('pageTitle').textContent = pageMeta[pageId].title;
+      document.getElementById('pageSubtitle').textContent = pageMeta[pageId].subtitle;
+      refreshAll();
+    }
+
+    function applyRoleAccess(role) {
+      document.getElementById('currentRoleLabel').textContent = roleMap[role].label;
+      const targetPage = roleMap[role].page;
+      openPage(targetPage);
+
+      if (role === 'marcacao') {
+        document.querySelector('.nav-btn[data-page="transportePage"]').style.display = 'none';
+        document.querySelector('.nav-btn[data-page="secretarioPage"]').style.display = 'none';
+      } else if (role === 'transporte') {
+        document.querySelector('.nav-btn[data-page="secretarioPage"]').style.display = 'none';
+        document.querySelector('.nav-btn[data-page="transportePage"]').style.display = '';
+        document.querySelector('.nav-btn[data-page="marcacaoPage"]').style.display = '';
+      } else {
+        navButtons().forEach(btn => btn.style.display = '');
+      }
+    }
+
+    function refreshStats() {
+      const records = getRecords();
+      const today = todayStr();
+      const weekRecords = records.filter(r => isDateInCurrentWeek(r.viagemData));
+
+      document.getElementById('markToday').textContent = records.filter(r => r.viagemData === today).length;
+      document.getElementById('markWeek').textContent = weekRecords.length;
+      document.getElementById('markNoVehicle').textContent = weekRecords.filter(r => !r.viagemVeiculo).length;
+      document.getElementById('markNoDriver').textContent = weekRecords.filter(r => !r.viagemMotorista).length;
+
+      document.getElementById('weekTripsCount').textContent = weekRecords.length;
+      document.getElementById('pendingVehicleCount').textContent = weekRecords.filter(r => !r.viagemVeiculo).length;
+      document.getElementById('pendingDriverCount').textContent = weekRecords.filter(r => !r.viagemMotorista).length;
+      document.getElementById('todayTripsCount').textContent = records.filter(r => r.viagemData === today).length;
+
+      document.getElementById('totalRegistros').textContent = records.length;
+      document.getElementById('registrosHoje').textContent = records.filter(r => r.viagemData === today).length;
+      document.getElementById('diasComViagem').textContent = new Set(records.map(r => r.viagemData).filter(Boolean)).size;
+      document.getElementById('semMotorista').textContent = records.filter(r => !r.viagemMotorista).length;
+    }
+
+    function renderTransportePage() {
+      const records = getRecords();
+      const weekDates = getWeekDates();
+      const weekNames = ['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sab', 'Dom'];
+      const weekView = document.getElementById('weekView');
+      weekView.innerHTML = '';
+
+      weekDates.forEach((dateObj, index) => {
+        const year = dateObj.getFullYear();
+        const month = String(dateObj.getMonth() + 1).padStart(2, '0');
+        const day = String(dateObj.getDate()).padStart(2, '0');
+        const iso = `${year}-${month}-${day}`;
+        const dayRecords = records.filter(r => r.viagemData === iso);
+
+        const col = document.createElement('div');
+        col.className = 'day-column';
+        col.innerHTML = `<h4>${weekNames[index]} - ${formatDate(iso)}</h4>`;
+
+        if (!dayRecords.length) {
+          col.innerHTML += `<div class="empty">Sem viagens</div>`;
+        } else {
+          dayRecords.forEach(r => {
+            const el = document.createElement('div');
+            el.className = 'trip-item';
+            el.innerHTML = `
+              <strong>${r.pacienteNome || '-'}</strong>
+              <div class="muted">${r.atendimentoLocal || '-'} • ${r.atendimentoHorario || '-'}</div>
+              <div class="tag" style="margin:8px 0;">${r.viagemTipo || 'Sem tipo'}</div>
+              <div class="field"><label>Veículo / Placa</label><input data-id="${r.id}" data-field="viagemVeiculo" value="${r.viagemVeiculo || ''}"></div>
+              <div class="field"><label>Motorista</label><input data-id="${r.id}" data-field="viagemMotorista" value="${r.viagemMotorista || ''}"></div>
+              <div class="field"><label>CPF do motorista</label><input data-id="${r.id}" data-field="motoristaCpf" value="${r.motoristaCpf || ''}"></div>
+              <div class="field"><label>Telefone do motorista</label><input data-id="${r.id}" data-field="motoristaTelefone" value="${r.motoristaTelefone || ''}"></div>
+              <div class="field"><label>Categoria CNH</label><input data-id="${r.id}" data-field="motoristaCategoria" value="${r.motoristaCategoria || ''}"></div>
+              <button class="btn btn-primary save-transport-btn" data-id="${r.id}">Salvar dados</button>
+            `;
+            col.appendChild(el);
+          });
+        }
+
+        weekView.appendChild(col);
+      });
+
+      document.querySelectorAll('.save-transport-btn').forEach(btn => {
+        btn.onclick = () => {
+          const id = btn.dataset.id;
+          const records = getRecords();
+          const target = records.find(r => r.id === id);
+          if (!target) return;
+          document.querySelectorAll(`[data-id="${id}"]`).forEach(input => {
+            target[input.dataset.field] = input.value.trim();
+          });
+          saveRecords(records);
+          refreshAll();
+          alert('Dados do transporte atualizados com sucesso.');
+        };
+      });
+    }
+
+    function groupByDate(records) {
+      return records.reduce((acc, r) => {
+        acc[r.viagemData] = acc[r.viagemData] || [];
+        acc[r.viagemData].push(r);
+        return acc;
+      }, {});
+    }
+
+    function renderSecretarioPage() {
+      let records = getRecords().sort((a, b) => (a.viagemData < b.viagemData ? 1 : -1));
+      const filtroData = document.getElementById('filtroData').value;
+      const buscaPaciente = document.getElementById('buscaPaciente').value.trim().toLowerCase();
+
+      if (filtroData) records = records.filter(r => r.viagemData === filtroData);
+      if (buscaPaciente) records = records.filter(r => (r.pacienteNome || '').toLowerCase().includes(buscaPaciente));
+
+      const container = document.getElementById('secretarioList');
+      if (!records.length) {
+        container.innerHTML = '<div class="empty">Nenhum registro encontrado.</div>';
+        return;
+      }
+
+      const grouped = groupByDate(records);
+      const dates = Object.keys(grouped).sort((a, b) => (a < b ? 1 : -1));
+
+      container.innerHTML = dates.map(date => {
+        const rows = grouped[date].map(r => `
+          <tr>
+            <td>${r.pacienteNome || '-'}</td>
+            <td>${r.atendimentoLocal || '-'}</td>
+            <td>${r.atendimentoTipo || '-'}</td>
+            <td>${r.atendimentoHorario || '-'}</td>
+            <td>${r.viagemTipo || '-'}</td>
+            <td>${r.viagemVeiculo || '-'}</td>
+            <td>${r.viagemMotorista || '-'}</td>
+            <td>
+              <div class="actions">
+                <button class="btn btn-light pdf-individual-btn" data-id="${r.id}">PDF</button>
+                <button class="btn btn-danger delete-record-btn" data-id="${r.id}">Excluir</button>
+              </div>
+            </td>
+          </tr>
+        `).join('');
+
+        return `
+          <div class="subcard" style="margin-bottom:16px;">
+            <div class="panel-header" style="margin-bottom:10px;">
+              <div>
+                <h3 style="font-size:18px; margin:0;">${formatDate(date)}</h3>
+                <p>${grouped[date].length} registro(s) nesta data</p>
+              </div>
+              <button class="btn btn-success pdf-date-btn" data-date="${date}">PDF desta data</button>
+            </div>
+            <table>
+              <thead>
+                <tr>
+                  <th>Paciente</th>
+                  <th>Local</th>
+                  <th>Atendimento</th>
+                  <th>Horário</th>
+                  <th>Transporte</th>
+                  <th>Veículo</th>
+                  <th>Motorista</th>
+                  <th>Ações</th>
+                </tr>
+              </thead>
+              <tbody>${rows}</tbody>
+            </table>
+          </div>
+        `;
+      }).join('');
+
+      document.querySelectorAll('.pdf-individual-btn').forEach(btn => {
+        btn.onclick = () => {
+          const rec = getRecords().find(r => r.id === btn.dataset.id);
+          if (rec) generatePatientPdf(rec);
+        };
+      });
+
+      document.querySelectorAll('.delete-record-btn').forEach(btn => {
+        btn.onclick = () => {
+          if (!confirm('Deseja realmente excluir este registro?')) return;
+          const updated = getRecords().filter(r => r.id !== btn.dataset.id);
+          saveRecords(updated);
+          refreshAll();
+        };
+      });
+
+      document.querySelectorAll('.pdf-date-btn').forEach(btn => {
+        btn.onclick = () => {
+          const date = btn.dataset.date;
+          const dayRecords = getRecords().filter(r => r.viagemData === date);
+          generateDailyPdf(dayRecords, date, `relatorio-${date}.pdf`);
+        };
+      });
+    }
+
+    function refreshAll() {
+      refreshStats();
+      renderTransportePage();
+      renderSecretarioPage();
+    }
+
+    document.getElementById('bookingForm').addEventListener('submit', e => {
+      e.preventDefault();
+      const record = collectFormData();
+      if (!record.pacienteNome || !record.viagemData) {
+        alert('Preencha pelo menos o nome do paciente e a data da viagem.');
+        return;
+      }
+      saveRecord(record);
+      e.target.reset();
+      alert('Marcação salva com sucesso.');
+    });
+
+    document.getElementById('saveAndPdfBtn').addEventListener('click', () => {
+      const record = collectFormData();
+      if (!record.pacienteNome || !record.viagemData) {
+        alert('Preencha pelo menos o nome do paciente e a data da viagem.');
+        return;
+      }
+      saveRecord(record);
+      generatePatientPdf(record);
+      document.getElementById('bookingForm').reset();
+      alert('Marcação salva e PDF gerado.');
+    });
+
+    document.getElementById('filtroData').addEventListener('input', renderSecretarioPage);
+    document.getElementById('buscaPaciente').addEventListener('input', renderSecretarioPage);
+
+    document.getElementById('limparFiltrosBtn').addEventListener('click', () => {
+      document.getElementById('filtroData').value = '';
+      document.getElementById('buscaPaciente').value = '';
+      renderSecretarioPage();
+    });
+
+    document.getElementById('pdfDiaBtn').addEventListener('click', () => {
+      const date = document.getElementById('filtroData').value;
+      if (!date) {
+        alert('Selecione uma data para gerar o PDF.');
+        return;
+      }
+      generateDailyPdf(getRecords().filter(r => r.viagemData === date), date, `relatorio-${date}.pdf`);
+    });
+
+    document.getElementById('pdfHojeBtn').addEventListener('click', () => {
+      const date = todayStr();
+      generateDailyPdf(getRecords().filter(r => r.viagemData === date), date, `relatorio-${date}.pdf`);
+    });
+
+    document.getElementById('loginRole').addEventListener('change', e => {
+      document.getElementById('passwordField').style.display = e.target.value === 'secretario' ? 'block' : 'none';
+    });
+
+    document.getElementById('enterAppBtn').addEventListener('click', () => {
+      const role = document.getElementById('loginRole').value;
+      const password = document.getElementById('loginPassword').value;
+      if (role === 'secretario' && password !== SECRETARIO_PASSWORD) {
+        alert('Senha do secretário incorreta.');
+        return;
+      }
+      document.getElementById('loginScreen').classList.add('hidden');
+      document.getElementById('appShell').classList.remove('hidden');
+      applyRoleAccess(role);
+      refreshAll();
+    });
+
+    navButtons().forEach(btn => {
+      btn.addEventListener('click', () => openPage(btn.dataset.page));
+    });
+
+    document.getElementById('logoutBtn').addEventListener('click', () => {
+      document.getElementById('appShell').classList.add('hidden');
+      document.getElementById('loginScreen').classList.remove('hidden');
+      document.getElementById('loginPassword').value = '';
+    });
+
+    document.getElementById('backupBtn').addEventListener('click', () => {
+      const data = JSON.stringify(getRecords(), null, 2);
+      const blob = new Blob([data], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'backup-transporte-saude.json';
+      a.click();
+      URL.revokeObjectURL(url);
+    });
+
+    document.getElementById('restoreInput').addEventListener('change', e => {
+      const file = e.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = evt => {
+        try {
+          const data = JSON.parse(evt.target.result);
+          if (!Array.isArray(data)) throw new Error('Formato inválido');
+          saveRecords(data);
+          refreshAll();
+          alert('Backup importado com sucesso.');
+        } catch (err) {
+          alert('Arquivo inválido para importação.');
+        }
+      };
+      reader.readAsText(file);
+    });
+  </script>
+
+<script>
+function entrarSistema(){
+const senha=document.getElementById("senhaSistema").value
+if(senha==="2026"){
+document.getElementById("loginSistema").style.display="none"
+}else{
+alert("Senha incorreta")
+}
+}
+</script>
+
+</body>
+</html>
