@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sistema Transporte da Saúde</title>
+<style>
+body{margin:0;font-family:Arial;background:#f3f6fb}
+.sidebar{background:#0f4c81;color:white;padding:20px;width:250px;position:fixed;height:100%}
+.content{margin-left:260px;padding:20px}
+button{padding:8px 12px;border:none;border-radius:6px;background:#0f4c81;color:white;cursor:pointer}
+input{width:100%;padding:6px;margin-top:4px;margin-bottom:8px;border:1px solid #ccc;border-radius:6px}
+table{width:100%;border-collapse:collapse;background:white}
+th,td{padding:8px;border-bottom:1px solid #eee}
+.card{background:white;padding:20px;border-radius:10px;margin-bottom:20px}
+.page{display:none}
+.page.active{display:block}
+</style>
+</head>
+
+<body>
+
+<div id="login" style="position:fixed;inset:0;background:#f3f6fb;display:flex;align-items:center;justify-content:center;">
+<div style="background:white;padding:40px;border-radius:10px;width:300px;text-align:center">
+<h2>Sistema Transporte</h2>
+<input id="senhaSistema" type="password" placeholder="Senha">
+<button onclick="entrar()">Entrar</button>
+</div>
+</div>
+
+<div class="sidebar">
+<h2>Transporte</h2>
+<button onclick="openPage('marcacao')">Marcação</button>
+<button onclick="openPage('transporte')">Transporte</button>
+<button onclick="openPage('secretario')">Secretário</button>
+</div>
+
+<div class="content">
+
+<div id="marcacao" class="page active">
+<div class="card">
+<h3>Nova Marcação</h3>
+<form id="form">
+<input id="pacienteNome" placeholder="Nome paciente" required>
+<input id="viagemData" type="date" required>
+<input id="atendimentoLocal" placeholder="Local atendimento">
+<input id="viagemTipo" placeholder="Tipo transporte">
+<input id="viagemVeiculo" placeholder="Veículo">
+<input id="viagemMotorista" placeholder="Motorista">
+<button type="submit">Salvar</button>
+</form>
+</div>
+
+<div class="card">
+<h3>Últimas marcações</h3>
+<div id="rascunho"></div>
+</div>
+</div>
+
+<div id="transporte" class="page">
+<div class="card">
+<h3>Todas as viagens</h3>
+<div id="listaTransporte"></div>
+</div>
+</div>
+
+<div id="secretario" class="page">
+<div class="card">
+<h3>Painel do Secretário</h3>
+<table>
+<thead>
+<tr>
+<th>Paciente</th>
+<th>Data</th>
+<th>Local</th>
+<th>Transporte</th>
+<th>Veículo</th>
+<th>Motorista</th>
+<th>Ações</th>
+</tr>
+</thead>
+<tbody id="tabela"></tbody>
+</table>
+</div>
+</div>
+
+</div>
+
+<script>
+
+const SENHA="2026"
+const SENHA_SECRETARIO="fran2026"
+
+function entrar(){
+if(document.getElementById("senhaSistema").value===SENHA){
+document.getElementById("login").style.display="none"
+carregar()
+}else alert("Senha incorreta")
+}
+
+function openPage(p){
+if(p==="secretario"){
+let s=prompt("Senha da secretaria")
+if(s!==SENHA_SECRETARIO)return
+}
+document.querySelectorAll(".page").forEach(e=>e.classList.remove("active"))
+document.getElementById(p).classList.add("active")
+}
+
+async function api(url,opt={}){
+const r=await fetch(url,opt)
+return r.json()
+}
+
+async function carregar(){
+const dados=await api("/api/registros")
+renderRascunho(dados)
+renderTransporte(dados)
+renderSecretario(dados)
+}
+
+function renderRascunho(d){
+let html=""
+d.slice(0,5).forEach(r=>{
+html+=`<div><strong>${r.pacienteNome}</strong><div>${r.viagemData}</div></div><hr>`
+})
+document.getElementById("rascunho").innerHTML=html
+}
+
+function renderTransporte(d){
+let html=""
+d.forEach(r=>{
+html+=`<div><strong>${r.pacienteNome}</strong><div>${r.viagemData} | ${r.viagemTipo||""}</div><div>${r.viagemVeiculo||""} - ${r.viagemMotorista||""}</div><hr></div>`
+})
+document.getElementById("listaTransporte").innerHTML=html
+}
+
+function renderSecretario(d){
+d.sort((a,b)=>b.viagemData.localeCompare(a.viagemData))
+let html=""
+d.forEach(r=>{
+html+=`
+<tr>
+<td>${r.pacienteNome}</td>
+<td>${r.viagemData}</td>
+<td><input value="${r.atendimentoLocal||""}" onchange="editar(${r.id},'atendimentoLocal',this.value)"></td>
+<td><input value="${r.viagemTipo||""}" onchange="editar(${r.id},'viagemTipo',this.value)"></td>
+<td><input value="${r.viagemVeiculo||""}" onchange="editar(${r.id},'viagemVeiculo',this.value)"></td>
+<td><input value="${r.viagemMotorista||""}" onchange="editar(${r.id},'viagemMotorista',this.value)"></td>
+<td><button onclick="excluir(${r.id})">Excluir</button></td>
+</tr>`
+})
+document.getElementById("tabela").innerHTML=html
+}
+
+async function editar(id,campo,valor){
+await fetch("/api/registros/"+id,{method:"PUT",headers:{"Content-Type":"application/json"},body:JSON.stringify({campo,valor})})
+}
+
+async function excluir(id){
+if(!confirm("Excluir registro?"))return
+await fetch("/api/registros/"+id,{method:"DELETE"})
+carregar()
+}
+
+document.getElementById("form").onsubmit=async e=>{
+e.preventDefault()
+const r={
+id:Date.now(),
+pacienteNome:pacienteNome.value,
+viagemData:viagemData.value,
+atendimentoLocal:atendimentoLocal.value,
+viagemTipo:viagemTipo.value,
+viagemVeiculo:viagemVeiculo.value,
+viagemMotorista:viagemMotorista.value
+}
+await fetch("/api/registros",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(r)})
+form.reset()
+carregar()
+}
+
+</script>
+</body>
+</html>
