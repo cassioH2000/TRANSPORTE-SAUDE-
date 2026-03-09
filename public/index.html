@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Sistema Profissional de Transporte da Saúde</title>
   <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <style>
     :root {
       --bg: #f3f6fb;
@@ -627,7 +628,13 @@ background:#f3f6fb;display:flex;align-items:center;justify-content:center;z-inde
 
   <script>
     const SECRETARIO_PASSWORD = '2026';
-    const STORAGE_KEY = 'sistema_transporte_saude_profissional';
+    const SUPABASE_URL = 'https://vkuqlhjxbmxzavpzbrgb.supabase.co';
+    const SUPABASE_KEY = 'sb_publishable_nqDfhqdPuWF5ogHqDX9ZAw_jry8hhyZ';
+    const SUPABASE_TABLE = 'marcacoes';
+    const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+    let recordsCache = [];
+    let currentPageId = 'marcacaoPage';
 
     const pageMeta = {
       marcacaoPage: { title: 'Página de Marcação', subtitle: 'Cadastre pacientes e gere o termo de responsabilidade em PDF.' },
@@ -645,11 +652,59 @@ background:#f3f6fb;display:flex;align-items:center;justify-content:center;z-inde
     const pages = () => document.querySelectorAll('.page');
 
     function getRecords() {
-      return JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
+      return recordsCache;
     }
 
-    function saveRecords(records) {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(records));
+    function setRecordsCache(records) {
+      recordsCache = Array.isArray(records) ? records : [];
+    }
+
+    async function loadRecordsFromSupabase() {
+      const { data, error } = await supabaseClient
+        .from(SUPABASE_TABLE)
+        .select('*')
+        .order('createdAt', { ascending: false });
+
+      if (error) {
+        console.error('Erro ao carregar registros:', error);
+        alert('Não foi possível carregar os dados do Supabase.');
+        return;
+      }
+
+      setRecordsCache((data || []).sort((a, b) => (a.viagemData < b.viagemData ? 1 : -1)));
+    }
+
+    async function saveRecords(records) {
+      const previousIds = new Set(getRecords().map(r => r.id));
+      const nextIds = new Set((records || []).map(r => r.id));
+      const removedIds = [...previousIds].filter(id => !nextIds.has(id));
+
+      setRecordsCache(records || []);
+
+      if (removedIds.length) {
+        const { error: deleteError } = await supabaseClient
+          .from(SUPABASE_TABLE)
+          .delete()
+          .in('id', removedIds);
+
+        if (deleteError) {
+          console.error('Erro ao remover registros:', deleteError);
+          alert('Erro ao remover alguns registros do banco.');
+        }
+      }
+
+      if ((records || []).length) {
+        const { error: upsertError } = await supabaseClient
+          .from(SUPABASE_TABLE)
+          .upsert(records, { onConflict: 'id' });
+
+        if (upsertError) {
+          console.error('Erro ao salvar registros:', upsertError);
+          alert('Erro ao salvar registros no banco.');
+        }
+      }
+
+      await loadRecordsFromSupabase();
     }
 
     function generateId() {
@@ -723,11 +778,21 @@ background:#f3f6fb;display:flex;align-items:center;justify-content:center;z-inde
       };
     }
 
-    function saveRecord(record) {
-      const records = getRecords();
-      records.push(record);
-      saveRecords(records);
+    async function saveRecord(record) {
+      const { error } = await supabaseClient
+        .from(SUPABASE_TABLE)
+        .insert([record]);
+
+      if (error) {
+        console.error('Erro ao salvar marcação:', error);
+        alert('Erro ao salvar marcação no banco.');
+        return false;
+      }
+
+      recordsCache.push(record);
+      recordsCache.sort((a, b) => (a.viagemData < b.viagemData ? 1 : -1));
       refreshAll();
+      return true;
     }
 
     function generatePatientPdf(record) {
@@ -862,17 +927,16 @@ background:#f3f6fb;display:flex;align-items:center;justify-content:center;z-inde
       doc.save(filename);
     }
 
-    
-function openPage(pageId){
+    function openPage(pageId){
+      if(pageId==="secretarioPage"){
+        const senha=prompt("Senha da Secretaria");
+        if(senha!=="fran2026"){
+          alert("Senha incorreta");
+          return;
+        }
+      }
 
-if(pageId==="secretarioPage"){
-const senha=prompt("Senha da Secretaria")
-if(senha!=="fran2026"){
-alert("Senha incorreta")
-return
-}
-}
-
+      currentPageId = pageId;
       pages().forEach(p => p.classList.remove('active'));
       navButtons().forEach(b => b.classList.remove('active'));
       document.getElementById(pageId).classList.add('active');
@@ -963,15 +1027,17 @@ return
       });
 
       document.querySelectorAll('.save-transport-btn').forEach(btn => {
-        btn.onclick = () => {
+        btn.onclick = async () => {
           const id = btn.dataset.id;
-          const records = getRecords();
+          const records = [...getRecords()];
           const target = records.find(r => r.id === id);
           if (!target) return;
+
           document.querySelectorAll(`[data-id="${id}"]`).forEach(input => {
             target[input.dataset.field] = input.value.trim();
           });
-          saveRecords(records);
+
+          await saveRecords(records);
           refreshAll();
           alert('Dados do transporte atualizados com sucesso.');
         };
@@ -987,7 +1053,7 @@ return
     }
 
     function renderSecretarioPage() {
-      let records = getRecords().sort((a, b) => (a.viagemData < b.viagemData ? 1 : -1));
+      let records = [...getRecords()].sort((a, b) => (a.viagemData < b.viagemData ? 1 : -1));
       const filtroData = document.getElementById('filtroData').value;
       const buscaPaciente = document.getElementById('buscaPaciente').value.trim().toLowerCase();
 
@@ -1058,10 +1124,10 @@ return
       });
 
       document.querySelectorAll('.delete-record-btn').forEach(btn => {
-        btn.onclick = () => {
+        btn.onclick = async () => {
           if (!confirm('Deseja realmente excluir este registro?')) return;
           const updated = getRecords().filter(r => r.id !== btn.dataset.id);
-          saveRecords(updated);
+          await saveRecords(updated);
           refreshAll();
         };
       });
@@ -1081,25 +1147,27 @@ return
       renderSecretarioPage();
     }
 
-    document.getElementById('bookingForm').addEventListener('submit', e => {
+    document.getElementById('bookingForm').addEventListener('submit', async e => {
       e.preventDefault();
       const record = collectFormData();
       if (!record.pacienteNome || !record.viagemData) {
         alert('Preencha pelo menos o nome do paciente e a data da viagem.');
         return;
       }
-      saveRecord(record);
+      const saved = await saveRecord(record);
+      if (!saved) return;
       e.target.reset();
       alert('Marcação salva com sucesso.');
     });
 
-    document.getElementById('saveAndPdfBtn').addEventListener('click', () => {
+    document.getElementById('saveAndPdfBtn').addEventListener('click', async () => {
       const record = collectFormData();
       if (!record.pacienteNome || !record.viagemData) {
         alert('Preencha pelo menos o nome do paciente e a data da viagem.');
         return;
       }
-      saveRecord(record);
+      const saved = await saveRecord(record);
+      if (!saved) return;
       generatePatientPdf(record);
       document.getElementById('bookingForm').reset();
       alert('Marcação salva e PDF gerado.');
@@ -1132,13 +1200,15 @@ return
       document.getElementById('passwordField').style.display = e.target.value === 'secretario' ? 'block' : 'none';
     });
 
-    document.getElementById('enterAppBtn').addEventListener('click', () => {
+    document.getElementById('enterAppBtn').addEventListener('click', async () => {
       const role = document.getElementById('loginRole').value;
       const password = document.getElementById('loginPassword').value;
       if (role === 'secretario' && password !== SECRETARIO_PASSWORD) {
         alert('Senha do secretário incorreta.');
         return;
       }
+
+      await loadRecordsFromSupabase();
       document.getElementById('loginScreen').classList.add('hidden');
       document.getElementById('appShell').classList.remove('hidden');
       applyRoleAccess(role);
@@ -1166,18 +1236,19 @@ return
       URL.revokeObjectURL(url);
     });
 
-    document.getElementById('restoreInput').addEventListener('change', e => {
+    document.getElementById('restoreInput').addEventListener('change', async e => {
       const file = e.target.files[0];
       if (!file) return;
       const reader = new FileReader();
-      reader.onload = evt => {
+      reader.onload = async evt => {
         try {
           const data = JSON.parse(evt.target.result);
           if (!Array.isArray(data)) throw new Error('Formato inválido');
-          saveRecords(data);
+          await saveRecords(data);
           refreshAll();
           alert('Backup importado com sucesso.');
         } catch (err) {
+          console.error(err);
           alert('Arquivo inválido para importação.');
         }
       };
