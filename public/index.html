@@ -562,7 +562,7 @@ background:#f3f6fb;display:flex;align-items:center;justify-content:center;z-inde
                 </div>
                 <div class="field"><label>Data</label><input id="viagemData" type="date" required></div>
                 <div class="field"><label>Local de embarque</label><input id="viagemEmbarque"></div>
-                <div class="field"><label>Veículo / Placa</label><input id="viagemVeiculo"></div>
+                <div class="field"><label>Veículo / Placa</label><input id="viagemTipo"></div>
                 <div class="field"><label>Motorista</label><input id="viagemMotorista"></div>
                 <div class="field"><label>Observação</label><textarea id="observacao"></textarea></div>
               </div>
@@ -614,6 +614,8 @@ background:#f3f6fb;display:flex;align-items:center;justify-content:center;z-inde
 
           <div class="toolbar">
             <div class="field inline"><label>Filtrar por data</label><input type="date" id="filtroData"></div>
+<div class="field inline"><label>Filtrar por tipo de transporte</label><input type="text" id="filtroTipoTransporte" placeholder="Ex: Van, Ambulância"></div>
+<button class="btn btn-warning" id="pdfVeiculoBtn">PDF por tipo de transporte</button>
             <div class="field inline"><label>Buscar por paciente</label><input type="text" id="buscaPaciente" placeholder="Digite o nome do paciente"></div>
             <button class="btn btn-light" id="limparFiltrosBtn">Limpar filtros</button>
             <button class="btn btn-success" id="pdfDiaBtn">Gerar PDF do dia filtrado</button>
@@ -769,7 +771,7 @@ background:#f3f6fb;display:flex;align-items:center;justify-content:center;z-inde
         viagemTipo: document.getElementById('viagemTipo').value.trim(),
         viagemData: document.getElementById('viagemData').value,
         viagemEmbarque: document.getElementById('viagemEmbarque').value.trim(),
-        viagemVeiculo: document.getElementById('viagemVeiculo').value.trim(),
+        viagemTipo: document.getElementById('viagemTipo').value.trim(),
         viagemMotorista: document.getElementById('viagemMotorista').value.trim(),
         observacao: document.getElementById('observacao').value.trim(),
         motoristaCpf: '',
@@ -832,7 +834,7 @@ background:#f3f6fb;display:flex;align-items:center;justify-content:center;z-inde
           `Tipo de transporte: ${record.viagemTipo || '-'}`,
           `Data da viagem: ${formatDate(record.viagemData)}`,
           `Local de embarque: ${record.viagemEmbarque || '-'}`,
-          `Veiculo / Placa: ${record.viagemVeiculo || '-'}`,
+          `Veiculo / Placa: ${record.viagemTipo || '-'}`,
           `Motorista: ${record.viagemMotorista || '-'}`,
           `Observacao: ${record.observacao || '-'}`
         ]]
@@ -909,7 +911,7 @@ background:#f3f6fb;display:flex;align-items:center;justify-content:center;z-inde
         [
           `Documento: ${r.pacienteDoc || '-'} | Telefone: ${r.pacienteTelefone || '-'}`,
           `Atendimento: ${r.atendimentoLocal || '-'} | Tipo: ${r.atendimentoTipo || '-'} | Horario: ${r.atendimentoHorario || '-'}`,
-          `Transporte: ${r.viagemTipo || '-'} | Embarque: ${r.viagemEmbarque || '-'} | Veiculo: ${r.viagemVeiculo || '-'} | Motorista: ${r.viagemMotorista || '-'}`,
+          `Transporte: ${r.viagemTipo || '-'} | Embarque: ${r.viagemEmbarque || '-'} | Veiculo: ${r.viagemTipo || '-'} | Motorista: ${r.viagemMotorista || '-'}`,
           `Acompanhante: ${r.acompNome || '-'} | Contato: ${r.acompTelefone || '-'}`,
           `Observacao: ${r.observacao || '-'}`
         ].forEach(line => {
@@ -970,11 +972,11 @@ background:#f3f6fb;display:flex;align-items:center;justify-content:center;z-inde
 
       document.getElementById('markToday').textContent = records.filter(r => r.viagemData === today).length;
       document.getElementById('markWeek').textContent = weekRecords.length;
-      document.getElementById('markNoVehicle').textContent = weekRecords.filter(r => !r.viagemVeiculo).length;
+      document.getElementById('markNoVehicle').textContent = weekRecords.filter(r => !r.viagemTipo).length;
       document.getElementById('markNoDriver').textContent = weekRecords.filter(r => !r.viagemMotorista).length;
 
       document.getElementById('weekTripsCount').textContent = weekRecords.length;
-      document.getElementById('pendingVehicleCount').textContent = weekRecords.filter(r => !r.viagemVeiculo).length;
+      document.getElementById('pendingVehicleCount').textContent = weekRecords.filter(r => !r.viagemTipo).length;
       document.getElementById('pendingDriverCount').textContent = weekRecords.filter(r => !r.viagemMotorista).length;
       document.getElementById('todayTripsCount').textContent = records.filter(r => r.viagemData === today).length;
 
@@ -1012,7 +1014,7 @@ background:#f3f6fb;display:flex;align-items:center;justify-content:center;z-inde
               <strong>${r.pacienteNome || '-'}</strong>
               <div class="muted">${r.atendimentoLocal || '-'} • ${r.atendimentoHorario || '-'}</div>
               <div class="tag" style="margin:8px 0;">${r.viagemTipo || 'Sem tipo'}</div>
-              <div class="field"><label>Veículo / Placa</label><input data-id="${r.id}" data-field="viagemVeiculo" value="${r.viagemVeiculo || ''}"></div>
+              <div class="field"><label>Veículo / Placa</label><input data-id="${r.id}" data-field="viagemTipo" value="${r.viagemTipo || ''}"></div>
               <div class="field"><label>Motorista</label><input data-id="${r.id}" data-field="viagemMotorista" value="${r.viagemMotorista || ''}"></div>
               <div class="field"><label>CPF do motorista</label><input data-id="${r.id}" data-field="motoristaCpf" value="${r.motoristaCpf || ''}"></div>
               <div class="field"><label>Telefone do motorista</label><input data-id="${r.id}" data-field="motoristaTelefone" value="${r.motoristaTelefone || ''}"></div>
@@ -1077,7 +1079,7 @@ background:#f3f6fb;display:flex;align-items:center;justify-content:center;z-inde
             <td>${r.atendimentoTipo || '-'}</td>
             <td>${r.atendimentoHorario || '-'}</td>
             <td>${r.viagemTipo || '-'}</td>
-            <td>${r.viagemVeiculo || '-'}</td>
+            <td>${r.viagemTipo || '-'}</td>
             <td>${r.viagemMotorista || '-'}</td>
             <td>
               <div class="actions">
@@ -1254,7 +1256,88 @@ background:#f3f6fb;display:flex;align-items:center;justify-content:center;z-inde
       };
       reader.readAsText(file);
     });
-  </script>
+  
+
+document.getElementById('filtroTipoTransporte')?.addEventListener('input', renderSecretarioPage);
+
+
+function gerarPdfVeiculo(lista,data,tipoTransporte){
+const { jsPDF } = window.jspdf;
+const doc=new jsPDF();
+let y=20;
+
+const cidade=lista[0]?.atendimentoLocal||"________";
+
+doc.setFontSize(14);
+doc.text("SECRETARIA MUNICIPAL DE SAÚDE DE WAGNER",14,y);
+y+=8;
+
+doc.setFontSize(11);
+doc.text("Tipo de transporte: "+tipoTransporte,14,y);
+y+=6;
+doc.text("Cidade de destino: "+cidade,14,y);
+y+=10;
+
+const texto=`A SECRETARIA MUNICIPAL DE SAÚDE DE WAGNER, ESTA TRANSPORTANDO PARA CIDADE DE ${cidade}, OS PACIENTES ABAIXO RELACIONADOS COM O OBJETIVO DE REALIZAR PROCEDIMENTOS MÉDICOS (EXAMES, CONSULTAS E CIRURGIAS) QUE NÃO SÃO OFERECIDOS EM NOSSO MUNICÍPIO E EM CIDADES CIRCUNVIZINHAS.`;
+
+const linhas=doc.splitTextToSize(texto,180);
+doc.text(linhas,14,y);
+y+=linhas.length*6+10;
+
+lista.forEach((r,i)=>{
+
+doc.setFontSize(11);
+doc.text((i+1)+". "+(r.pacienteNome||""),14,y);
+y+=6;
+
+let resumo="Destino: "+(r.atendimentoLocal||"-")+" | Procedimento: "+(r.atendimentoTipo||"-");
+const linhasResumo=doc.splitTextToSize(resumo,180);
+doc.setFontSize(10);
+doc.text(linhasResumo,18,y);
+y+=linhasResumo.length*5+6;
+
+doc.line(18,y,120,y); 
+y+=10;
+
+if(y>260){
+doc.addPage();
+y=20;
+}
+
+});
+
+y+=10;
+
+doc.setFontSize(11);
+doc.text("________________________________________",14,y);
+y+=6;
+doc.text("FRANCINEIDE OLIVEIRA DA SILVA",14,y);
+y+=6;
+doc.text("Secretaria Municipal De Saúde",14,y);
+y+=6;
+doc.text("Decreto 007/2025",14,y);
+
+doc.save("lista-"+tipoTransporte+"-"+data+".pdf");
+}
+
+
+document.getElementById("pdfVeiculoBtn")?.addEventListener("click",()=>{
+const data=document.getElementById("filtroData").value;
+const tipoTransporte=(document.getElementById("filtroTipoTransporte").value||"").toLowerCase();
+
+if(!data||!tipoTransporte){alert("Escolha data e veículo");return;}
+
+const registros=getRecords().filter(r=>
+r.viagemData===data &&
+(r.viagemTipo||"").toLowerCase().includes(tipoTransporte)
+);
+
+if(!registros.length){alert("Nenhum paciente encontrado");return;}
+
+gerarPdfVeiculo(registros,data,tipoTransporte);
+});
+
+</script>
 
 <script>
 function entrarSistema(){
